@@ -1,0 +1,11 @@
+age,income,gender,diagnosis
+34,55000,Male,Diabetes
+28,42000,Female,Healthy
+45,72000,Male,Hypertension
+52,68000,Female,Diabetes
+31,39000,Male,Healthy
+40,61000,Female,Asthma
+27,35000,Male,Healthy
+63,85000,Female,Hypertension
+38,48000,Male,Asthma
+50,76000,Female,Diabetes

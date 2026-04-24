@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SynthGuard — Synthetic Data Generation</title>
+<style>
+  :root {
+    --bg-primary: #0f1117;
+    --bg-secondary: #1a1d27;
+    --bg-card: #222639;
+    --bg-elevated: #2a2f45;
+    --accent: #6c5ce7;
+    --accent-light: #a29bfe;
+    --accent-glow: rgba(108, 92, 231, 0.25);
+    --success: #00cec9;
+    --warning: #fdcb6e;
+    --danger: #ff7675;
+    --text: #f0f0f5;
+    --text-muted: #9ca3b8;
+    --text-dim: #636e88;
+    --border: #2d3250;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg-primary);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Header ──────────────────────────────────────────────── */
+  header {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .logo-icon {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-light));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 4px 20px var(--accent-glow);
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 4px 20px var(--accent-glow); }
+    50% { box-shadow: 0 4px 35px rgba(108, 92, 231, 0.45); }
+  }
+
+  .logo-text {
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--text), var(--accent-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── Main Layout ─────────────────────────────────────────── */
+  .app-container {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 0;
+    min-height: calc(100vh - 83px);
+  }
+
+  /* ── Left Panel ──────────────────────────────────────────── */
+  .left-panel {
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  /* File upload area */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-zone:hover,
+  .upload-zone.dragover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  .upload-zone.has-file {
+    border-color: var(--success);
+    background: rgba(0, 206, 201, 0.08);
+  }
+
+  .upload-icon { font-size: 36px; margin-bottom: 8px; }
+  .upload-text { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+  .upload-text strong { color: var(--accent-light); }
+  .file-name {
+    margin-top: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--success);
+  }
+
+  #fileInput { display: none; }
+
+  /* Sliders */
+  .control-group { display: flex; flex-direction: column; gap: 6px; }
+
+  .control-label {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; font-weight: 600; color: var(--text-muted);
+  }
+
+  .control-value {
+    background: var(--bg-elevated);
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent-light);
+    min-width: 48px;
+    text-align: center;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--bg-elevated);
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-light));
+    box-shadow: 0 2px 10px var(--accent-glow);
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
+
+  /* Buttons */
+  .btn-group { display: flex; flex-direction: column; gap: 12px; }
+
+  .btn {
+    padding: 14px 20px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.05) 100%);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #8b7cf7);
+    color: white;
+    box-shadow: 0 4px 15px var(--accent-glow);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(108, 92, 231, 0.4);
+  }
+
+  .btn-secondary {
+    background: var(--bg-elevated);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    background: var(--bg-card);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+
+  .btn .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: none;
+  }
+
+  .btn.loading .spinner { display: block; }
+  .btn.loading .btn-text { opacity: 0.6; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Right Panel ─────────────────────────────────────────── */
+  .right-panel {
+    padding: 32px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  /* Empty state */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 16px;
+    color: var(--text-dim);
+  }
+
+  .empty-icon { font-size: 64px; opacity: 0.4; }
+  .empty-title { font-size: 18px; font-weight: 700; color: var(--text-muted); }
+  .empty-desc { font-size: 13px; max-width: 340px; text-align: center; line-height: 1.6; }
+
+  /* Report cards */
+  .report-section { animation: fadeUp 0.4s ease-out; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .report-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .metric-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: var(--transition);
+  }
+
+  .metric-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .metric-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .metric-value {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .metric-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  /* Privacy badge */
+  .privacy-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .privacy-badge.high {
+    background: rgba(0, 206, 201, 0.15);
+    color: var(--success);
+    border: 1px solid rgba(0, 206, 201, 0.3);
+  }
+
+  .privacy-badge.medium {
+    background: rgba(253, 203, 110, 0.15);
+    color: var(--warning);
+    border: 1px solid rgba(253, 203, 110, 0.3);
+  }
+
+  .privacy-badge.low {
+    background: rgba(255, 118, 117, 0.15);
+    color: var(--danger);
+    border: 1px solid rgba(255, 118, 117, 0.3);
+  }
+
+  .privacy-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    animation: blink 1.5s ease-in-out infinite;
+  }
+
+  .high .privacy-dot { background: var(--success); }
+  .medium .privacy-dot { background: var(--warning); }
+  .low .privacy-dot { background: var(--danger); }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Noise breakdown */
+  .noise-list { display: flex; flex-direction: column; gap: 14px; }
+
+  .noise-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .noise-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .noise-col { color: var(--text); }
+  .noise-pct { color: var(--accent-light); font-weight: 700; }
+
+  .noise-bar-bg {
+    height: 6px;
+    background: var(--bg-elevated);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .noise-bar {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-light));
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ── Data Table Section ──────────────────────────────────── */
+  .table-section {
+    animation: fadeUp 0.5s ease-out;
+  }
+
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .table-title {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .row-count {
+    font-size: 12px;
+    color: var(--text-muted);
+    background: var(--bg-elevated);
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-left: 10px;
+  }
+
+  .btn-download {
+    padding: 8px 18px;
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: var(--font);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-download:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead {
+    background: var(--bg-card);
+    position: sticky;
+    top: 0;
+  }
+
+  th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    transition: background var(--transition);
+  }
+
+  tbody tr:hover {
+    background: rgba(108, 92, 231, 0.06);
+  }
+
+  tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.015);
+  }
+
+  /* ── Toast ───────────────────────────────────────────────── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 14px 24px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 1000;
+    animation: slideIn 0.3s ease-out;
+    display: none;
+  }
+
+  .toast.error {
+    background: rgba(255, 118, 117, 0.15);
+    border: 1px solid rgba(255, 118, 117, 0.3);
+    color: var(--danger);
+  }
+
+  .toast.success {
+    background: rgba(0, 206, 201, 0.15);
+    border: 1px solid rgba(0, 206, 201, 0.3);
+    color: var(--success);
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ── Responsive ──────────────────────────────────────────── */
+  @media (max-width: 860px) {
+    .app-container {
+      grid-template-columns: 1fr;
+    }
+    .left-panel {
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ────────────────────────────────────────────── -->
+<header>
+  <div class="logo-icon">🛡️</div>
+  <div>
+    <div class="logo-text">SynthGuard</div>
+    <div class="logo-sub">Privacy-Preserving Synthetic Data</div>
+  </div>
+</header>
+
+<!-- ── App Container ─────────────────────────────────────── -->
+<div class="app-container">
+
+  <!-- Left Panel -->
+  <div class="left-panel">
+
+    <div>
+      <div class="section-title">Data Source</div>
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+        <input type="file" id="fileInput" accept=".csv" />
+        <div class="upload-icon">📄</div>
+        <div class="upload-text">
+          <strong>Click to upload</strong> or drag & drop<br />CSV files only
+        </div>
+        <div class="file-name" id="fileName"></div>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <div class="section-title">Configuration</div>
+      <div class="control-label">
+        <span>Synthetic Rows</span>
+        <span class="control-value" id="rowsValue">100</span>
+      </div>
+      <input type="range" id="rowsSlider" min="10" max="500" value="100" step="10" />
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">
+        <span>Privacy Budget (ε)</span>
+        <span class="control-value" id="epsilonValue">1.0</span>
+      </div>
+      <input type="range" id="epsilonSlider" min="0.1" max="10.0" value="1.0" step="0.1" />
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" id="btnGenerate" onclick="generateData()" disabled>
+        <span class="spinner"></span>
+        <span class="btn-text">⚡ Generate Synthetic Data</span>
+      </button>
+      <button class="btn btn-secondary" id="btnReport" onclick="getReport()" disabled>
+        <span class="spinner"></span>
+        <span class="btn-text">📊 Privacy Report</span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Right Panel -->
+  <div class="right-panel" id="rightPanel">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🔒</div>
+      <div class="empty-title">No data generated yet</div>
+      <div class="empty-desc">Upload a CSV file, configure your privacy budget, and generate synthetic data to get started.</div>
+    </div>
+
+    <!-- Report Section (hidden initially) -->
+    <div class="report-section" id="reportSection" style="display:none">
+      <div class="section-title">Privacy Analysis</div>
+      <div class="report-grid" id="reportGrid"></div>
+      <div style="margin-top:20px">
+        <div class="section-title">Per-Column Noise Breakdown</div>
+        <div class="noise-list" id="noiseList"></div>
+      </div>
+    </div>
+
+    <!-- Data Table Section (hidden initially) -->
+    <div class="table-section" id="tableSection" style="display:none">
+      <div class="table-header">
+        <div style="display:flex;align-items:center">
+          <span class="table-title">Synthetic Dataset</span>
+          <span class="row-count" id="rowCount"></span>
+        </div>
+        <button class="btn-download" id="btnDownload" onclick="downloadCSV()">⬇ Download CSV</button>
+      </div>
+      <div class="table-wrap">
+        <table id="dataTable">
+          <thead id="tableHead"></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────
+  let uploadedFile = null;
+  let syntheticData = null;
+  let syntheticColumns = null;
+
+  // ── Elements ───────────────────────────────────────────────
+  const fileInput    = document.getElementById('fileInput');
+  const uploadZone   = document.getElementById('uploadZone');
+  const fileName     = document.getElementById('fileName');
+  const rowsSlider   = document.getElementById('rowsSlider');
+  const rowsValue    = document.getElementById('rowsValue');
+  const epsilonSlider = document.getElementById('epsilonSlider');
+  const epsilonValue  = document.getElementById('epsilonValue');
+  const btnGenerate  = document.getElementById('btnGenerate');
+  const btnReport    = document.getElementById('btnReport');
+  const emptyState   = document.getElementById('emptyState');
+  const reportSection = document.getElementById('reportSection');
+  const tableSection = document.getElementById('tableSection');
+
+  // ── File Upload ────────────────────────────────────────────
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length) {
+      uploadedFile = e.target.files[0];
+      fileName.textContent = '✓ ' + uploadedFile.name;
+      uploadZone.classList.add('has-file');
+      btnGenerate.disabled = false;
+      btnReport.disabled = false;
+    }
+  });
+
+  // Drag & Drop
+  uploadZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadZone.classList.add('dragover');
+  });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+  uploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    if (e.dataTransfer.files.length && e.dataTransfer.files[0].name.endsWith('.csv')) {
+      uploadedFile = e.dataTransfer.files[0];
+      fileInput.files = e.dataTransfer.files;
+      fileName.textContent = '✓ ' + uploadedFile.name;
+      uploadZone.classList.add('has-file');
+      btnGenerate.disabled = false;
+      btnReport.disabled = false;
+    }
+  });
+
+  // ── Sliders ────────────────────────────────────────────────
+  rowsSlider.addEventListener('input', () => rowsValue.textContent = rowsSlider.value);
+  epsilonSlider.addEventListener('input', () => epsilonValue.textContent = parseFloat(epsilonSlider.value).toFixed(1));
+
+  // ── Generate Synthetic Data ────────────────────────────────
+  async function generateData() {
+    if (!uploadedFile) return;
+
+    setLoading(btnGenerate, true);
+    const formData = new FormData();
+    formData.append('file', uploadedFile);
+    formData.append('rows', rowsSlider.value);
+    formData.append('epsilon', epsilonSlider.value);
+
+    try {
+      const res = await fetch('/generate/tabular', { method: 'POST', body: formData });
+      const json = await res.json();
+
+      if (json.error) {
+        showToast(json.error, 'error');
+        return;
+      }
+
+      syntheticData = json.data;
+      syntheticColumns = json.columns;
+
+      renderTable(json.columns, json.data);
+      document.getElementById('rowCount').textContent = json.row_count + ' rows';
+      emptyState.style.display = 'none';
+      tableSection.style.display = 'block';
+      showToast('Synthetic data generated successfully!', 'success');
+    } catch (err) {
+      showToast('Generation failed: ' + err.message, 'error');
+    } finally {
+      setLoading(btnGenerate, false);
+    }
+  }
+
+  // ── Privacy Report ─────────────────────────────────────────
+  async function getReport() {
+    if (!uploadedFile) return;
+
+    setLoading(btnReport, true);
+    const formData = new FormData();
+    formData.append('file', uploadedFile);
+    formData.append('epsilon', epsilonSlider.value);
+
+    try {
+      const res = await fetch('/report', { method: 'POST', body: formData });
+      const json = await res.json();
+
+      if (json.error) {
+        showToast(json.error, 'error');
+        return;
+      }
+
+      renderReport(json);
+      emptyState.style.display = 'none';
+      reportSection.style.display = 'block';
+      showToast('Privacy report generated!', 'success');
+    } catch (err) {
+      showToast('Report failed: ' + err.message, 'error');
+    } finally {
+      setLoading(btnReport, false);
+    }
+  }
+
+  // ── Render Report ──────────────────────────────────────────
+  function renderReport(report) {
+    const grid = document.getElementById('reportGrid');
+    const privacyColor = { high: 'var(--success)', medium: 'var(--warning)', low: 'var(--danger)' };
+
+    grid.innerHTML = `
+      <div class="metric-card">
+        <div class="metric-label">Privacy Level</div>
+        <div class="privacy-badge ${report.privacy_level}">
+          <span class="privacy-dot"></span>
+          ${report.privacy_level}
+        </div>
+        <div class="metric-sub">ε = ${report.epsilon}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Utility Score</div>
+        <div class="metric-value" style="color:${privacyColor[report.privacy_level]}">${report.utility_score}</div>
+        <div class="metric-sub">out of 100</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">k-Anonymity Proxy</div>
+        <div class="metric-value" style="color:var(--accent-light)">${report.k_anonymity_proxy}</div>
+        <div class="metric-sub">estimated k-value</div>
+      </div>
+    `;
+
+    const noiseList = document.getElementById('noiseList');
+    noiseList.innerHTML = '';
+
+    for (const [col, pct] of Object.entries(report.per_column_noise)) {
+      const clampedPct = Math.min(pct, 100);
+      const item = document.createElement('div');
+      item.className = 'noise-item';
+      item.innerHTML = `
+        <div class="noise-header">
+          <span class="noise-col">${col}</span>
+          <span class="noise-pct">${pct}%</span>
+        </div>
+        <div class="noise-bar-bg">
+          <div class="noise-bar" style="width:0%"></div>
+        </div>
+      `;
+      noiseList.appendChild(item);
+      // Animate bar
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          item.querySelector('.noise-bar').style.width = clampedPct + '%';
+        });
+      });
+    }
+  }
+
+  // ── Render Table ───────────────────────────────────────────
+  function renderTable(columns, data) {
+    const head = document.getElementById('tableHead');
+    const body = document.getElementById('tableBody');
+
+    head.innerHTML = '<tr>' + columns.map(c => `<th>${c}</th>`).join('') + '</tr>';
+
+    const displayData = data.slice(0, 20);
+    body.innerHTML = displayData.map(row =>
+      '<tr>' + columns.map(c => `<td>${row[c] !== undefined ? row[c] : ''}</td>`).join('') + '</tr>'
+    ).join('');
+  }
+
+  // ── Download CSV ──────────────────────────────────────────
+  function downloadCSV() {
+    if (!syntheticData || !syntheticColumns) return;
+
+    let csv = syntheticColumns.join(',') + '\n';
+    syntheticData.forEach(row => {
+      csv += syntheticColumns.map(c => {
+        let val = row[c] !== undefined ? String(row[c]) : '';
+        if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+          val = '"' + val.replace(/"/g, '""') + '"';
+        }
+        return val;
+      }).join(',') + '\n';
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'synthguard_synthetic_data.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('CSV downloaded!', 'success');
+  }
+
+  // ── Helpers ────────────────────────────────────────────────
+  function setLoading(btn, loading) {
+    if (loading) {
+      btn.classList.add('loading');
+      btn.disabled = true;
+    } else {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+
+  function showToast(msg, type) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.className = 'toast ' + type;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 3500);
+  }
+</script>
+</body>
+</html>
